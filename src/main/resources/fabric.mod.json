@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "infoinslot",
+  "version": "${version}",
+  "name": "Info in Slot",
+  "description": "Displays Timer Auction/Order Price & Order Count for DonutSMP (Configurable)",
+  "authors": ["EdvinNGU"],
+  "contributors": ["Map in Slot Mod"],
+  "contact": {
+    "homepage": "https://github.com/EdvinNGU/Info-in-Slot"
+  },
+  "license": "MIT",
+  "icon": "assets/drill-info-in-slot/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "main": ["com.drillslotinfo.DrillSlotInfo"],
+    "client": ["com.drillslotinfo.client.DrillSlotInfoClient"],
+    "modmenu": ["com.drillslotinfo.config.ModMenuIntegration"]
+  },
+  "mixins": [
+    "drill-info-in-slot.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.11",
+    "cloth-config": ">=21.0.0"
+  }
+}
