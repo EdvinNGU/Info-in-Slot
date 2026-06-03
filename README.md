@@ -3,6 +3,10 @@ Mod was inspired by Map in Slot https://github.com/Crec0/map-in-slot
 
 This mod extracts information from the Tooltip sent by the DonutSMP server without the need to hover mouse over it, then uses that information to display a list of stats onto the inventory hotbar Slot
 
+<img width="499" height="319" alt="image" src="https://github.com/user-attachments/assets/fb9ebbf9-569c-4d73-bf8a-fc6a558aef10" />
+
+<img width="499" height="316" alt="image" src="https://github.com/user-attachments/assets/c5795e3a-f087-4c06-92dd-716caba8e376" />
+
 List of Stats that are displayed
 - Self Destruct or Expire Timer
 - Auction or Order Item Price
@@ -45,12 +49,5 @@ or Donating (text to speech if im streaming) https://botrix.live/k/edvinngu/tip
 
 or Buying Merch https://edvinngu.store/
 
-<img width="499" height="319" alt="image" src="https://github.com/user-attachments/assets/fb9ebbf9-569c-4d73-bf8a-fc6a558aef10" />
-
-<img width="397" height="116" alt="image" src="https://github.com/user-attachments/assets/2265b617-7043-48f0-a669-5b82bc0f523c" />
-
-<img width="499" height="316" alt="image" src="https://github.com/user-attachments/assets/c5795e3a-f087-4c06-92dd-716caba8e376" />
-
-<img width="256" height="256" alt="image" src="https://github.com/user-attachments/assets/458c3891-bb51-4d97-aa0e-71ebcee112bb" />
 
 
