@@ -14,7 +14,8 @@ or Buying Merch https://edvinngu.store/
 
 <img width="397" height="116" alt="image" src="https://github.com/user-attachments/assets/2265b617-7043-48f0-a669-5b82bc0f523c" />
 
+<img width="499" height="316" alt="image" src="https://github.com/user-attachments/assets/c5795e3a-f087-4c06-92dd-716caba8e376" />
+
 <img width="256" height="256" alt="image" src="https://github.com/user-attachments/assets/458c3891-bb51-4d97-aa0e-71ebcee112bb" />
 
-<img width="499" height="316" alt="image" src="https://github.com/user-attachments/assets/c5795e3a-f087-4c06-92dd-716caba8e376" />
 
