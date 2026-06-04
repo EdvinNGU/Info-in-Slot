@@ -1,4 +1,4 @@
-# Info-in-Slot
+# Info in slot
 Mod was inspired by Map in Slot https://github.com/Crec0/map-in-slot
 
 This mod extracts information from the Tooltip sent by the DonutSMP server without the need to hover mouse over it, then uses that information to display a list of stats onto the inventory hotbar Slot
