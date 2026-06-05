@@ -4,39 +4,40 @@ import com.drillslotinfo.DrillItemParser;
 import com.drillslotinfo.ParsedDrillData;
 import com.drillslotinfo.client.DrillSlotInfoClient;
 import com.drillslotinfo.config.DrillConfig;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
-import net.minecraft.screen.slot.Slot;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(HandledScreen.class)
+@Mixin(AbstractContainerScreen.class)
 public abstract class HandledScreenMixin {
 
-    @Shadow protected int x;
-    @Shadow protected int y;
+    @Shadow protected int leftPos;
+    @Shadow protected int topPos;
 
-    @Inject(method = "render", at = @At("TAIL"))
-    private void afterRender(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+    @Inject(method = "extractRenderState", at = @At("TAIL"))
+    private void afterExtractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         if (!DrillConfig.enabled) return;
 
-        TextRenderer tr = MinecraftClient.getInstance().textRenderer;
-        HandledScreen<?> self = (HandledScreen<?>) (Object) this;
+        Font font = Minecraft.getInstance().font;
+        AbstractContainerScreen<?> self = (AbstractContainerScreen<?>) (Object) this;
 
-        for (Slot slot : self.getScreenHandler().slots) {
-            if (slot.getStack().isEmpty()) continue;
+        for (Slot slot : self.getMenu().slots) {
+            ItemStack stack = slot.getItem();
+            if (stack.isEmpty()) continue;
 
-            ParsedDrillData data = DrillItemParser.getData(slot.getStack());
+            ParsedDrillData data = DrillItemParser.getData(stack);
             if (data == null) continue;
 
-            // slot.x / slot.y are GUI-relative; this.x / this.y are the GUI origin in screen space
-            DrillSlotInfoClient.renderOverlay(context, tr, data,
-                    this.x + slot.x, this.y + slot.y);
+            DrillSlotInfoClient.renderOverlay(context, font, data,
+                    this.leftPos + slot.x, this.topPos + slot.y);
         }
     }
 }

@@ -7,23 +7,23 @@ import com.drillslotinfo.config.DrillConfig;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.ItemStack;
+import com.mojang.blaze3d.platform.InputConstants;
 import org.lwjgl.glfw.GLFW;
 
 public class DrillSlotInfoClient implements ClientModInitializer {
 
-    public static KeyBinding toggleModKey;
-    public static KeyBinding toggleHoursOnlyKey;
-    public static KeyBinding cycleSizeKey;
+    public static KeyMapping toggleModKey;
+    public static KeyMapping toggleHoursOnlyKey;
+    public static KeyMapping cycleSizeKey;
 
     @Override
     public void onInitializeClient() {
@@ -32,38 +32,39 @@ public class DrillSlotInfoClient implements ClientModInitializer {
         ClientCommandRegistrationCallback.EVENT.register(SlotInfoCommand::register);
 
         // ── Keybindings — "Info in Slot" category in Controls ─────────────────
-        KeyBinding.Category cat = KeyBinding.Category.create(Identifier.of("infoinslot", "keys"));
-        toggleModKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        KeyMapping.Category cat = KeyMapping.Category.register(
+                Identifier.fromNamespaceAndPath("infoinslot", "keys"));
+        toggleModKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.infoinslot.toggle_mod",
-                InputUtil.Type.KEYSYM,
+                InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_UNKNOWN,
                 cat
         ));
-        toggleHoursOnlyKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        toggleHoursOnlyKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.infoinslot.toggle_hours_only",
-                InputUtil.Type.KEYSYM,
+                InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_UNKNOWN,
                 cat
         ));
-        cycleSizeKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        cycleSizeKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.infoinslot.cycle_size",
-                InputUtil.Type.KEYSYM,
+                InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_UNKNOWN,
                 cat
         ));
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            while (toggleModKey.wasPressed()) {
+            while (toggleModKey.consumeClick()) {
                 DrillConfig.enabled = !DrillConfig.enabled;
                 DrillConfig.save();
             }
-            while (toggleHoursOnlyKey.wasPressed()) {
+            while (toggleHoursOnlyKey.consumeClick()) {
                 DrillConfig.hoursOnly = !DrillConfig.hoursOnly;
                 if (!DrillConfig.hoursOnly && DrillConfig.timerSize == DrillConfig.TimerSize.LARGE)
                     DrillConfig.timerSize = DrillConfig.TimerSize.MEDIUM;
                 DrillConfig.save();
             }
-            while (cycleSizeKey.wasPressed()) {
+            while (cycleSizeKey.consumeClick()) {
                 DrillConfig.TimerSize[] sizes = DrillConfig.TimerSize.values();
                 int next = (DrillConfig.timerSize.ordinal() + 1) % sizes.length;
                 DrillConfig.TimerSize nextSize = sizes[next];
@@ -75,35 +76,37 @@ public class DrillSlotInfoClient implements ClientModInitializer {
         });
 
         // ── HUD hotbar overlay ─────────────────────────────────────────────────
-        HudRenderCallback.EVENT.register((context, tickCounter) -> {
-            if (!DrillConfig.enabled) return;
+        HudElementRegistry.addLast(
+            Identifier.fromNamespaceAndPath("infoinslot", "hotbar_overlay"),
+            (graphics, delta) -> {
+                if (!DrillConfig.enabled) return;
 
-            MinecraftClient client = MinecraftClient.getInstance();
-            if (client.player == null || client.currentScreen != null) return;
+                Minecraft client = Minecraft.getInstance();
+                if (client.player == null || client.screen != null) return;
 
-            TextRenderer tr = client.textRenderer;
-            int sw = client.getWindow().getScaledWidth();
-            int sh = client.getWindow().getScaledHeight();
+                Font font = client.font;
+                int sw = client.getWindow().getGuiScaledWidth();
+                int sh = client.getWindow().getGuiScaledHeight();
 
-            int hotbarLeft = sw / 2 - 91;
-            int iconY      = sh - 22 + 3;
+                int hotbarLeft = sw / 2 - 91;
+                int iconY      = sh - 22 + 3;
 
-            for (int i = 0; i < 9; i++) {
-                ItemStack stack = client.player.getInventory().getStack(i);
-                if (stack.isEmpty()) continue;
+                for (int i = 0; i < 9; i++) {
+                    ItemStack stack = client.player.getInventory().getItem(i);
+                    if (stack.isEmpty()) continue;
 
-                ParsedDrillData data = DrillItemParser.getData(stack);
-                if (data == null) continue;
+                    ParsedDrillData data = DrillItemParser.getData(stack);
+                    if (data == null) continue;
 
-                renderOverlay(context, tr, data, hotbarLeft + i * 20 + 2, iconY);
+                    renderOverlay(graphics, font, data, hotbarLeft + i * 20 + 2, iconY);
+                }
             }
-        });
+        );
     }
 
-    public static void renderOverlay(DrawContext context, TextRenderer tr,
+    public static void renderOverlay(GuiGraphicsExtractor context, Font font,
                                      ParsedDrillData data, int sx, int sy) {
         // ── Timer ──────────────────────────────────────────────────────────────
-        // Skip timer render if the item has no timer in its lore (all fields are -1)
         if (DrillConfig.showTimer && !(data.days == -1 && data.hours == -1 && data.minutes == -1 && data.seconds == -1)) {
             DrillConfig.TimerSize size = DrillConfig.timerSize;
             if (size == DrillConfig.TimerSize.LARGE && !DrillConfig.hoursOnly)
@@ -115,7 +118,7 @@ public class DrillSlotInfoClient implements ClientModInitializer {
                 case MEDIUM -> { maxPx = 15f; scaleRef = "23h 9m";  cap = 0.6f; }
                 default     -> { maxPx = 14f; scaleRef = "23h 59m"; cap = 0.5f; }
             }
-            float scale = Math.min(cap, maxPx / Math.max(1f, tr.getWidth(scaleRef)));
+            float scale = Math.min(cap, maxPx / Math.max(1f, font.width(scaleRef)));
 
             String label; int color; boolean bold;
             if (DrillConfig.hoursOnly) {
@@ -134,39 +137,36 @@ public class DrillSlotInfoClient implements ClientModInitializer {
                 color = colorForData(data); bold = boldForData(data);
             }
 
-            renderTextLine(context, tr, label, color, bold, scale,
+            renderTextLine(context, font, label, color, bold, scale,
                     DrillConfig.showBackground, DrillConfig.timerPosition,
                     sx, sy, DrillConfig.separateSlotColors);
         }
 
         // ── Auction Price ("/ah" — lime green, no space) ───────────────────────
         if (DrillConfig.showPrice && data.auctionPrice != null) {
-            float scale = priceScale(tr, DrillConfig.priceSize);
-            renderTextLine(context, tr, data.auctionPrice,
+            float scale = priceScale(font, DrillConfig.priceSize);
+            renderTextLine(context, font, data.auctionPrice,
                     DrillConfig.priceColor | 0xFF000000, DrillConfig.priceBold, scale,
                     DrillConfig.showPriceBackground, DrillConfig.pricePosition,
                     sx, sy, false);
         }
 
         // ── Order Price ("/order" — white digits, space removed) ──────────────
-        // Renders on top of auction price when at the same position (priority)
         if (DrillConfig.showOrderPrice && data.orderPrice != null) {
-            float scale = priceScale(tr, DrillConfig.orderPriceSize);
-            renderTextLine(context, tr, data.orderPrice,
+            float scale = priceScale(font, DrillConfig.orderPriceSize);
+            renderTextLine(context, font, data.orderPrice,
                     DrillConfig.orderPriceColor | 0xFF000000, DrillConfig.orderPriceBold, scale,
                     DrillConfig.showOrderPriceBackground, DrillConfig.orderPricePosition,
                     sx, sy, false);
         }
 
         // ── Delivered count ────────────────────────────────────────────────────
-        // For expired/completed orders, show total delivered (done count / numerator)
-        // instead of the remaining count
         if (DrillConfig.showDelivered) {
             String deliveredLabel = (data.orderFinished && data.deliveredDone != null)
                     ? data.deliveredDone : data.delivered;
             if (deliveredLabel != null) {
-                float scale = priceScale(tr, DrillConfig.deliveredSize);
-                renderTextLine(context, tr, deliveredLabel,
+                float scale = priceScale(font, DrillConfig.deliveredSize);
+                renderTextLine(context, font, deliveredLabel,
                         DrillConfig.deliveredColor | 0xFF000000, DrillConfig.deliveredBold, scale,
                         DrillConfig.showDeliveredBackground, DrillConfig.deliveredPosition,
                         sx, sy, false);
@@ -176,18 +176,18 @@ public class DrillSlotInfoClient implements ClientModInitializer {
 
     // ── Shared render helpers ─────────────────────────────────────────────────
 
-    private static float priceScale(TextRenderer tr, DrillConfig.PriceSize size) {
+    private static float priceScale(Font font, DrillConfig.PriceSize size) {
         return size == DrillConfig.PriceSize.MEDIUM
-                ? Math.min(0.6f, 15f / Math.max(1f, tr.getWidth("$99.99M")))
-                : Math.min(0.5f, 14f / Math.max(1f, tr.getWidth("$99.99M")));
+                ? Math.min(0.6f, 15f / Math.max(1f, font.width("$99.99M")))
+                : Math.min(0.5f, 14f / Math.max(1f, font.width("$99.99M")));
     }
 
-    private static void renderTextLine(DrawContext context, TextRenderer tr,
+    private static void renderTextLine(GuiGraphicsExtractor context, Font font,
                                        String label, int color, boolean bold, float scale,
                                        boolean showBg, DrillConfig.TimerPosition pos,
                                        int sx, int sy, boolean useSeparateColors) {
         int bgH = (int) Math.ceil(9 * scale) + 1;
-        int bgW = Math.min((int) Math.ceil(tr.getWidth(label) * scale) + 2 + (bold ? 2 : 0), 16);
+        int bgW = Math.min((int) Math.ceil(font.width(label) * scale) + 2 + (bold ? 2 : 0), 16);
 
         int yOff = switch (pos) {
             case MIDDLE -> (16 - bgH) / 2;
@@ -199,20 +199,18 @@ public class DrillSlotInfoClient implements ClientModInitializer {
             context.fill(sx, sy + yOff, sx + bgW, sy + yOff + bgH, 0xBB000000);
         }
 
-        var m = context.getMatrices();
+        var m = context.pose();
         m.pushMatrix();
         m.translate(sx + 1f, sy + yOff + 1f);
         m.scale(scale, scale);
 
         if (useSeparateColors && label.contains(" ")) {
-            // Normal spaced format: "9d 17h"
             int sp = label.indexOf(' ');
             String p1 = label.substring(0, sp);
             String p2 = label.substring(sp + 1);
-            drawPart(context, tr, p1, 0, 0, colorForPart(p1), boldForPart(p1));
-            drawPart(context, tr, p2, tr.getWidth(p1) + tr.getWidth(" "), 0, colorForPart(p2), boldForPart(p2));
+            drawPart(context, font, p1, 0, 0, colorForPart(p1), boldForPart(p1));
+            drawPart(context, font, p2, font.width(p1) + font.width(" "), 0, colorForPart(p2), boldForPart(p2));
         } else if (useSeparateColors) {
-            // Compact no-space format: "10d19h" — find split after first unit letter
             int split = -1;
             for (int k = 0; k < label.length() - 1; k++) {
                 char c = label.charAt(k);
@@ -221,24 +219,24 @@ public class DrillSlotInfoClient implements ClientModInitializer {
             if (split > 0) {
                 String p1 = label.substring(0, split);
                 String p2 = label.substring(split);
-                drawPart(context, tr, p1, 0, 0, colorForPart(p1), boldForPart(p1));
-                drawPart(context, tr, p2, tr.getWidth(p1), 0, colorForPart(p2), boldForPart(p2));
+                drawPart(context, font, p1, 0, 0, colorForPart(p1), boldForPart(p1));
+                drawPart(context, font, p2, font.width(p1), 0, colorForPart(p2), boldForPart(p2));
             } else {
-                drawPart(context, tr, label, 0, 0, color, bold);
+                drawPart(context, font, label, 0, 0, color, bold);
             }
         } else {
-            drawPart(context, tr, label, 0, 0, color, bold);
+            drawPart(context, font, label, 0, 0, color, bold);
         }
 
         m.popMatrix();
     }
 
-    private static void drawPart(DrawContext context, TextRenderer tr,
+    private static void drawPart(GuiGraphicsExtractor context, Font font,
                                  String text, int x, int y, int color, boolean bold) {
         if (bold) {
-            context.drawText(tr, Text.literal(text).styled(s -> s.withBold(true)), x, y, color, false);
+            context.text(font, Component.literal(text).withStyle(s -> s.withBold(true)), x, y, color, false);
         } else {
-            context.drawText(tr, text, x, y, color, false);
+            context.text(font, text, x, y, color, false);
         }
     }
 
