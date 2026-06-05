@@ -1,11 +1,11 @@
 package com.drillslotinfo;
 
 import com.drillslotinfo.config.DrillConfig;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.tooltip.TooltipType;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -16,12 +16,8 @@ public class DrillItemParser {
     private static final Pattern TIME_UNIT    = Pattern.compile("(\\d+)\\s*([dDhHmMsS])(?![a-zA-Z])");
     private static final Pattern COLOR_CODE   = Pattern.compile("§[0-9a-fk-orA-FK-OR]");
 
-    // Auction price: "$" immediately followed by digits (no space), optional suffix — e.g. "$1.27B", "$0.11", "$107"
-    // "Worth:" lines are excluded before this pattern runs to avoid picking up shop NPC prices
     private static final Pattern AUCTION_PRICE_PAT = Pattern.compile("\\$(?!\\s)([0-9,.]+[BMKbmkTtQq]?)");
-    // Order price: "$" followed by one or more spaces then digits — e.g. "$ 130.1k", "$ 107M"
     private static final Pattern ORDER_PRICE_PAT   = Pattern.compile("\\$\\s+([0-9,.]+[kKmMbBtTqQ]?)");
-    // Delivered: "X/Y Delivered" — X is completed, Y is total
     private static final Pattern DELIVERED_PAT     = Pattern.compile(
             "([0-9][0-9,.]*[kKmMbBtTqQ]?)/([0-9][0-9,.]*[kKmMbBtTqQ]?)\\s+delivered", Pattern.CASE_INSENSITIVE);
 
@@ -37,17 +33,17 @@ public class DrillItemParser {
     public static ParsedDrillData getData(ItemStack stack) {
         if (stack.isEmpty() || !DrillConfig.enabled) return null;
 
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.world == null) return null;
+        Minecraft client = Minecraft.getInstance();
+        if (client.level == null) return null;
 
         if (MISS_CACHE.contains(stack)) return null;
         ParsedDrillData cached = CACHE.get(stack);
         if (cached != null) return cached;
 
-        List<Text> tooltip = stack.getTooltip(
-                Item.TooltipContext.create(client.world),
+        List<Component> tooltip = stack.getTooltipLines(
+                Item.TooltipContext.of(client.level),
                 client.player,
-                TooltipType.BASIC);
+                TooltipFlag.Default.NORMAL);
         if (tooltip.isEmpty()) { MISS_CACHE.add(stack); return null; }
 
         String name = COLOR_CODE.matcher(tooltip.get(0).getString()).replaceAll("").trim();
@@ -66,21 +62,16 @@ public class DrillItemParser {
             String raw = COLOR_CODE.matcher(tooltip.get(i).getString()).replaceAll("").trim();
             if (raw.isEmpty()) continue;
 
-            // Auction price: "$X.XXB/M/k" — no space after $, suffix letter required
-            // Skip lines containing "Worth:" to avoid picking up shop/NPC price displays
             if (auctionPriceStr == null && !raw.contains("Worth:")) {
                 Matcher pm = AUCTION_PRICE_PAT.matcher(raw);
-                if (pm.find()) auctionPriceStr = pm.group(0); // includes the $
+                if (pm.find()) auctionPriceStr = pm.group(0);
             }
 
-            // Order price: "$ X.XXk" or "$ 107M" — space after $; store without the space
             if (orderPriceStr == null) {
                 Matcher pm = ORDER_PRICE_PAT.matcher(raw);
-                if (pm.find()) orderPriceStr = "$" + pm.group(1); // strip space
+                if (pm.find()) orderPriceStr = "$" + pm.group(1);
             }
 
-            // Delivered count: "X/Y Delivered"
-            // Store remaining (Y - X) and also done count (X) for expired/completed orders
             if (deliveredStr == null) {
                 Matcher pm = DELIVERED_PAT.matcher(raw);
                 if (pm.find()) {
@@ -92,8 +83,6 @@ public class DrillItemParser {
                 }
             }
 
-            // Order finished detection: line contains "expir" or "complet" but has no time units
-            // This distinguishes "Order Expired" / "Completed" status from countdown timers
             if (!orderFinishedFlag) {
                 String lower = raw.toLowerCase();
                 if (lower.contains("expir") || lower.contains("complet")) {
@@ -103,7 +92,6 @@ public class DrillItemParser {
                 }
             }
 
-            // Timer detection (expiry countdown, self-destruct, or order-completed timer)
             if (timerResult == null) {
                 String lower = raw.toLowerCase();
                 if (lower.contains("destruct") || lower.contains("expir")
@@ -117,7 +105,6 @@ public class DrillItemParser {
             }
         }
 
-        // Return data if we found anything useful — timer is not required
         if (timerResult != null || auctionPriceStr != null || orderPriceStr != null || deliveredStr != null) {
             int d = timerResult != null ? timerResult.days    : -1;
             int h = timerResult != null ? timerResult.hours   : -1;
@@ -142,8 +129,6 @@ public class DrillItemParser {
         }
         return null;
     }
-
-    // ── Compact number helpers ────────────────────────────────────────────────
 
     static double parseCompact(String s) {
         s = s.replace(",", "").trim();
@@ -176,11 +161,9 @@ public class DrillItemParser {
         return String.format("%.1f", v);
     }
 
-    // ── Timer extraction ──────────────────────────────────────────────────────
-
     private static ParsedDrillData extractTimer(String text) {
         Matcher m = TIME_UNIT.matcher(text);
-        int[] v = {-1, -1, -1, -1}; // d h m s
+        int[] v = {-1, -1, -1, -1};
         while (m.find()) {
             int val = Integer.parseInt(m.group(1));
             switch (Character.toLowerCase(m.group(2).charAt(0))) {

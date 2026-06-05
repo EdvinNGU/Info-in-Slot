@@ -4,15 +4,15 @@ import com.drillslotinfo.config.DrillConfig;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
-import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.text.Text;
+import net.minecraft.commands.CommandBuildContext;
+import net.minecraft.network.chat.Component;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static com.mojang.brigadier.arguments.StringArgumentType.getString;
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.argument;
-import static net.fabricmc.fabric.api.client.command.v2.ClientCommandManager.literal;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.argument;
+import static net.fabricmc.fabric.api.client.command.v2.ClientCommands.literal;
 
 public class SlotInfoCommand {
 
@@ -47,7 +47,7 @@ public class SlotInfoCommand {
     }
 
     public static void register(CommandDispatcher<FabricClientCommandSource> dispatcher,
-                                CommandRegistryAccess registryAccess) {
+                                CommandBuildContext registryAccess) {
         dispatcher.register(
             literal("slotinfo")
                 .executes(ctx -> showStatus(ctx.getSource()))
@@ -56,7 +56,6 @@ public class SlotInfoCommand {
                     .then(literal("on") .executes(ctx -> { DrillConfig.enabled = true;  return ok(ctx.getSource(), "Mod enabled");  }))
                     .then(literal("off").executes(ctx -> { DrillConfig.enabled = false; return ok(ctx.getSource(), "Mod disabled"); })))
 
-                // ── Timer settings ────────────────────────────────────────────
                 .then(literal("background")
                     .then(literal("on") .executes(ctx -> { DrillConfig.showBackground = true;  return ok(ctx.getSource(), "Timer background on");  }))
                     .then(literal("off").executes(ctx -> { DrillConfig.showBackground = false; return ok(ctx.getSource(), "Timer background off"); })))
@@ -103,7 +102,6 @@ public class SlotInfoCommand {
                             .suggests((ctx, b) -> { COLOR_NAMES.keySet().forEach(b::suggest); return b.buildFuture(); })
                             .executes(ctx -> setTimerColor(ctx.getSource(), getString(ctx, "tier"), getString(ctx, "color"))))))
 
-                // ── Auction Price ─────────────────────────────────────────────
                 .then(literal("price")
                     .executes(ctx -> showPriceStatus(ctx.getSource()))
                     .then(literal("on") .executes(ctx -> { DrillConfig.showPrice = true;  return ok(ctx.getSource(), "Auction price on");  }))
@@ -126,7 +124,6 @@ public class SlotInfoCommand {
                         .then(literal("on") .executes(ctx -> { DrillConfig.priceBold = true;  return ok(ctx.getSource(), "Auction price bold on");  }))
                         .then(literal("off").executes(ctx -> { DrillConfig.priceBold = false; return ok(ctx.getSource(), "Auction price bold off"); }))))
 
-                // ── Order Price ───────────────────────────────────────────────
                 .then(literal("orderprice")
                     .executes(ctx -> showOrderPriceStatus(ctx.getSource()))
                     .then(literal("on") .executes(ctx -> { DrillConfig.showOrderPrice = true;  return ok(ctx.getSource(), "Order price on");  }))
@@ -149,7 +146,6 @@ public class SlotInfoCommand {
                         .then(literal("on") .executes(ctx -> { DrillConfig.orderPriceBold = true;  return ok(ctx.getSource(), "Order price bold on");  }))
                         .then(literal("off").executes(ctx -> { DrillConfig.orderPriceBold = false; return ok(ctx.getSource(), "Order price bold off"); }))))
 
-                // ── Order Delivered ───────────────────────────────────────────
                 .then(literal("delivered")
                     .executes(ctx -> showDeliveredStatus(ctx.getSource()))
                     .then(literal("on") .executes(ctx -> { DrillConfig.showDelivered = true;  return ok(ctx.getSource(), "Delivered display on");  }))
@@ -174,21 +170,19 @@ public class SlotInfoCommand {
         );
     }
 
-    // ── Status displays ───────────────────────────────────────────────────────
-
     private static int showStatus(FabricClientCommandSource src) {
-        src.sendFeedback(Text.literal("§e=== Info in Slot Settings ==="));
-        src.sendFeedback(Text.literal(
+        src.sendFeedback(Component.literal("§e=== Info in Slot Settings ==="));
+        src.sendFeedback(Component.literal(
             "§7Enabled: §f" + bool(DrillConfig.enabled) +
             " §7| Show Timer: §f" + bool(DrillConfig.showTimer)));
-        src.sendFeedback(Text.literal(
+        src.sendFeedback(Component.literal(
             "§7Size: §f" + cap(DrillConfig.timerSize.name()) +
             " §7| Hours Only: §f" + bool(DrillConfig.hoursOnly) +
             " §7| Pos: §f" + cap(DrillConfig.timerPosition.name())));
-        src.sendFeedback(Text.literal(
+        src.sendFeedback(Component.literal(
             "§7BG: §f" + bool(DrillConfig.showBackground) +
             " §7| Separate: §f" + bool(DrillConfig.separateSlotColors)));
-        src.sendFeedback(Text.literal(
+        src.sendFeedback(Component.literal(
             "§72+Day §f" + cname(DrillConfig.twoDayColor) + btag(DrillConfig.twoDayBold) +
             " §7Day §f"  + cname(DrillConfig.dayColor)    + btag(DrillConfig.dayBold) +
             " §7Hour §f" + cname(DrillConfig.hourColor)   + btag(DrillConfig.hourBold) +
@@ -200,7 +194,7 @@ public class SlotInfoCommand {
     }
 
     private static int showPriceStatus(FabricClientCommandSource src) {
-        src.sendFeedback(Text.literal(
+        src.sendFeedback(Component.literal(
             "§e[Auction Price] §7Show: §f" + bool(DrillConfig.showPrice) +
             " §7Pos: §f" + cap(DrillConfig.pricePosition.name()) +
             " §7BG: §f"  + bool(DrillConfig.showPriceBackground) +
@@ -210,7 +204,7 @@ public class SlotInfoCommand {
     }
 
     private static int showOrderPriceStatus(FabricClientCommandSource src) {
-        src.sendFeedback(Text.literal(
+        src.sendFeedback(Component.literal(
             "§e[Order Price] §7Show: §f" + bool(DrillConfig.showOrderPrice) +
             " §7Pos: §f" + cap(DrillConfig.orderPricePosition.name()) +
             " §7BG: §f"  + bool(DrillConfig.showOrderPriceBackground) +
@@ -220,7 +214,7 @@ public class SlotInfoCommand {
     }
 
     private static int showDeliveredStatus(FabricClientCommandSource src) {
-        src.sendFeedback(Text.literal(
+        src.sendFeedback(Component.literal(
             "§e[Delivered] §7Show: §f" + bool(DrillConfig.showDelivered) +
             " §7Pos: §f" + cap(DrillConfig.deliveredPosition.name()) +
             " §7BG: §f"  + bool(DrillConfig.showDeliveredBackground) +
@@ -229,11 +223,9 @@ public class SlotInfoCommand {
         return 1;
     }
 
-    // ── Handlers ──────────────────────────────────────────────────────────────
-
     private static int setTimerSize(FabricClientCommandSource src, DrillConfig.TimerSize size) {
         if (size == DrillConfig.TimerSize.LARGE && !DrillConfig.hoursOnly) {
-            src.sendFeedback(Text.literal("§c[SlotInfo] Large requires Hours Only first."));
+            src.sendFeedback(Component.literal("§c[SlotInfo] Large requires Hours Only first."));
             return 0;
         }
         DrillConfig.timerSize = size;
@@ -247,27 +239,27 @@ public class SlotInfoCommand {
             case "hour"   -> DrillConfig.hourBold   = on;
             case "minute" -> DrillConfig.minuteBold = on;
             case "all"    -> { DrillConfig.twoDayBold = DrillConfig.dayBold = DrillConfig.hourBold = DrillConfig.minuteBold = on; }
-            default -> { src.sendFeedback(Text.literal("§c[SlotInfo] Unknown tier: " + tier)); return 0; }
+            default -> { src.sendFeedback(Component.literal("§c[SlotInfo] Unknown tier: " + tier)); return 0; }
         }
         return ok(src, "Bold " + (on ? "on" : "off") + " for " + tier);
     }
 
     private static int setTimerColor(FabricClientCommandSource src, String tier, String colorArg) {
         Integer val = COLOR_NAMES.get(colorArg.toLowerCase());
-        if (val == null) { src.sendFeedback(Text.literal("§c[SlotInfo] Unknown color: " + colorArg)); return 0; }
+        if (val == null) { src.sendFeedback(Component.literal("§c[SlotInfo] Unknown color: " + colorArg)); return 0; }
         switch (tier.toLowerCase()) {
             case "2day"   -> DrillConfig.twoDayColor  = val;
             case "day"    -> DrillConfig.dayColor     = val;
             case "hour"   -> DrillConfig.hourColor    = val;
             case "minute" -> DrillConfig.minuteColor  = val;
-            default -> { src.sendFeedback(Text.literal("§c[SlotInfo] Unknown tier: " + tier)); return 0; }
+            default -> { src.sendFeedback(Component.literal("§c[SlotInfo] Unknown tier: " + tier)); return 0; }
         }
         return ok(src, "Timer color for " + tier + " → " + colorArg);
     }
 
     private static int setColor(FabricClientCommandSource src, String colorArg, String target) {
         Integer val = COLOR_NAMES.get(colorArg.toLowerCase());
-        if (val == null) { src.sendFeedback(Text.literal("§c[SlotInfo] Unknown color: " + colorArg)); return 0; }
+        if (val == null) { src.sendFeedback(Component.literal("§c[SlotInfo] Unknown color: " + colorArg)); return 0; }
         switch (target) {
             case "price"      -> DrillConfig.priceColor      = val;
             case "orderprice" -> DrillConfig.orderPriceColor = val;
@@ -276,10 +268,8 @@ public class SlotInfoCommand {
         return ok(src, cap(target) + " color → " + colorArg);
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
     private static int ok(FabricClientCommandSource src, String msg) {
-        src.sendFeedback(Text.literal("§a[SlotInfo] " + msg));
+        src.sendFeedback(Component.literal("§a[SlotInfo] " + msg));
         DrillConfig.save();
         return 1;
     }
