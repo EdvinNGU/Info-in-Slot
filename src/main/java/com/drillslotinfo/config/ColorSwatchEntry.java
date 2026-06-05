@@ -1,12 +1,13 @@
 package com.drillslotinfo.config;
 
 import me.shedaniel.clothconfig2.api.AbstractConfigListEntry;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.Click;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.Element;
-import net.minecraft.client.gui.Selectable;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarratableEntry;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
 
 import java.util.Collections;
 import java.util.List;
@@ -25,61 +26,56 @@ public class ColorSwatchEntry extends AbstractConfigListEntry<Integer> {
     private static final int SWATCH     = 8;
     private static final int GAP        = 2;
     private static final int COLS       = 8;
-    private static final int ROW_H      = SWATCH + GAP; // 10
+    private static final int ROW_H      = SWATCH + GAP;
     private static final int BOLD_BTN_W = 28;
     private static final int BOLD_BTN_H = 9;
 
     private int value;
-    private final int defaultValue;  // factory default — used by the Reset button
-    private final int initialValue;  // value when screen opened — used by isEdited()
+    private final int defaultValue;
+    private final int initialValue;
     private final Consumer<Integer> saveConsumer;
 
     private boolean boldValue;
-    private final boolean defaultBold;  // factory default
-    private final boolean initialBold;  // value when screen opened
+    private final boolean defaultBold;
+    private final boolean initialBold;
     private final Consumer<Boolean> boldSave;
 
-    // Cached render coords for hit-detection in mouseClicked.
     private int lastX, lastY, lastW, lastH;
 
-    public ColorSwatchEntry(Text fieldName, int value, int defaultValue,
+    public ColorSwatchEntry(Component fieldName, int value, int defaultValue,
                             boolean bold, boolean defaultBold,
                             Consumer<Integer> saveConsumer, Consumer<Boolean> boldSave) {
         super(fieldName, false);
         this.value        = value;
         this.defaultValue = defaultValue;
-        this.initialValue = value;   // snapshot of the loaded value
+        this.initialValue = value;
         this.saveConsumer = saveConsumer;
         this.boldValue    = bold;
         this.defaultBold  = defaultBold;
-        this.initialBold  = bold;    // snapshot of the loaded bold state
+        this.initialBold  = bold;
         this.boldSave     = boldSave;
     }
 
-    @Override public Integer getValue()                        { return value; }
-    @Override public Optional<Integer> getDefaultValue()      { return Optional.of(defaultValue); }
-    @Override public void save()                              { saveConsumer.accept(value); boldSave.accept(boldValue); }
-
-    // Compare against the value that was loaded when the screen opened, not the factory default.
-    // This ensures the Save button stays active when the user undoes a non-default value back to
-    // a state that still differs from the factory default (e.g. bold was saved as true, user turns it off).
-    @Override public boolean isEdited()                       { return value != initialValue || boldValue != initialBold; }
-
-    @Override public List<? extends Element> children()       { return Collections.emptyList(); }
-    @Override public List<? extends Selectable> narratables() { return Collections.emptyList(); }
+    @Override public Integer getValue()                   { return value; }
+    @Override public Optional<Integer> getDefaultValue()  { return Optional.of(defaultValue); }
+    @Override public void save()                          { saveConsumer.accept(value); boldSave.accept(boldValue); }
+    @Override public boolean isEdited()                   { return value != initialValue || boldValue != initialBold; }
 
     @Override
-    public void render(DrawContext ctx, int index, int y, int x,
-                       int entryWidth, int entryHeight, int mx, int my,
-                       boolean hovered, float delta) {
+    public List<? extends GuiEventListener> children()   { return Collections.emptyList(); }
+    @Override
+    public List<? extends NarratableEntry> narratables() { return Collections.emptyList(); }
+
+    @Override
+    public void extractRenderState(GuiGraphicsExtractor ctx, int index, int y, int x,
+                                   int entryWidth, int entryHeight, int mx, int my,
+                                   boolean hovered, float delta) {
         lastX = x; lastY = y; lastW = entryWidth; lastH = entryHeight;
-        MinecraftClient mc = MinecraftClient.getInstance();
+        Minecraft mc = Minecraft.getInstance();
 
-        // Field label
-        ctx.drawTextWithShadow(mc.textRenderer, getDisplayedFieldName(), x, y + 9, 0xFFFFFFFF);
+        ctx.text(mc.font, getDisplayedFieldName(), x, y + 9, 0xFFFFFFFF, true);
 
-        // Swatch grid: 8 cols × 2 rows, right-aligned
-        int swatchAreaW = COLS * (SWATCH + GAP) - GAP; // 78
+        int swatchAreaW = COLS * (SWATCH + GAP) - GAP;
         int swX0 = x + entryWidth - swatchAreaW;
 
         for (int i = 0; i < PRESETS.length; i++) {
@@ -93,28 +89,26 @@ public class ColorSwatchEntry extends AbstractConfigListEntry<Integer> {
             ctx.fill(sx, sy, sx + SWATCH, sy + SWATCH, PRESETS[i] | 0xFF000000);
         }
 
-        // Colour preview square: left of swatch grid
         int previewX = swX0 - 16;
         int previewY = y + (entryHeight - 12) / 2;
         ctx.fill(previewX - 1, previewY - 1, previewX + 13, previewY + 13, 0xFFAAAAAA);
         ctx.fill(previewX, previewY, previewX + 12, previewY + 12, value | 0xFF000000);
 
-        // Bold toggle button: left of preview square
         int boldBtnX = previewX - 4 - BOLD_BTN_W;
         int boldBtnY = y + (entryHeight - BOLD_BTN_H) / 2;
         ctx.fill(boldBtnX, boldBtnY, boldBtnX + BOLD_BTN_W, boldBtnY + BOLD_BTN_H,
                  boldValue ? 0xFF686868 : 0xFF303030);
         if (boldValue) {
-            ctx.drawTextWithShadow(mc.textRenderer,
-                    Text.literal("Bold").styled(s -> s.withBold(true)),
-                    boldBtnX + 3, boldBtnY + 1, 0xFFFFFFFF);
+            ctx.text(mc.font,
+                    Component.literal("Bold").withStyle(Style.EMPTY.withBold(true)),
+                    boldBtnX + 3, boldBtnY + 1, 0xFFFFFFFF, false);
         } else {
-            ctx.drawTextWithShadow(mc.textRenderer, "Bold", boldBtnX + 3, boldBtnY + 1, 0xFF777777);
+            ctx.text(mc.font, "Bold", boldBtnX + 3, boldBtnY + 1, 0xFF777777, false);
         }
     }
 
     @Override
-    public boolean mouseClicked(Click click, boolean bl) {
+    public boolean mouseClicked(MouseButtonEvent click, boolean bl) {
         if (click.button() != 0) return false;
         double mx = click.x();
         double my = click.y();
@@ -122,7 +116,6 @@ public class ColorSwatchEntry extends AbstractConfigListEntry<Integer> {
         int swatchAreaW = COLS * (SWATCH + GAP) - GAP;
         int swX0 = lastX + lastW - swatchAreaW;
 
-        // Bold button hit
         int previewX = swX0 - 16;
         int boldBtnX = previewX - 4 - BOLD_BTN_W;
         int boldBtnY = lastY + (lastH - BOLD_BTN_H) / 2;
@@ -132,7 +125,6 @@ public class ColorSwatchEntry extends AbstractConfigListEntry<Integer> {
             return true;
         }
 
-        // Color swatch hit
         for (int i = 0; i < PRESETS.length; i++) {
             int col = i % COLS;
             int row = i / COLS;

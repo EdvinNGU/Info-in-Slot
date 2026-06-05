@@ -6,7 +6,7 @@ import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,7 +41,7 @@ public class DrillConfig {
     public static TimerPosition pricePosition       = TimerPosition.TOP;
     public static boolean       showPriceBackground = true;
     public static PriceSize     priceSize           = PriceSize.MEDIUM;
-    public static int           priceColor          = 0x55FF55; // lime green
+    public static int           priceColor          = 0x55FF55;
     public static boolean       priceBold           = false;
 
     // ── Order Price (/order tooltip: "$ 130.1k" with space) ──────────────────
@@ -49,7 +49,7 @@ public class DrillConfig {
     public static TimerPosition orderPricePosition       = TimerPosition.TOP;
     public static boolean       showOrderPriceBackground = true;
     public static PriceSize     orderPriceSize           = PriceSize.MEDIUM;
-    public static int           orderPriceColor          = 0x55FF55; // lime
+    public static int           orderPriceColor          = 0x55FF55;
     public static boolean       orderPriceBold           = false;
 
     // ── Order Display (delivered count) ──────────────────────────────────────
@@ -57,7 +57,7 @@ public class DrillConfig {
     public static TimerPosition deliveredPosition       = TimerPosition.BOTTOM;
     public static boolean       showDeliveredBackground = true;
     public static PriceSize     deliveredSize           = PriceSize.MEDIUM;
-    public static int           deliveredColor          = 0xFFFFFF; // white
+    public static int           deliveredColor          = 0xFFFFFF;
     public static boolean       deliveredBold           = false;
 
     // ── Persistence ───────────────────────────────────────────────────────────
@@ -75,7 +75,6 @@ public class DrillConfig {
         try {
             ConfigData d = GSON.fromJson(Files.readString(CONFIG_PATH), ConfigData.class);
             if (d == null) return;
-            // Timer Display
             enabled            = d.enabled;
             showTimer          = d.showTimer;
             showBackground     = d.showBackground;
@@ -91,21 +90,18 @@ public class DrillConfig {
             dayBold    = d.dayBold;
             hourBold   = d.hourBold;
             minuteBold = d.minuteBold;
-            // Auction Price
             showPrice           = d.showPrice;
             pricePosition       = safeEnum(TimerPosition.class, d.pricePosition,      pricePosition);
             showPriceBackground = d.showPriceBackground;
             priceSize           = safeEnum(PriceSize.class,     d.priceSize,          priceSize);
             if (d.priceColor != 0) priceColor = d.priceColor;
             priceBold           = d.priceBold;
-            // Order Price
             showOrderPrice           = d.showOrderPrice;
             orderPricePosition       = safeEnum(TimerPosition.class, d.orderPricePosition, orderPricePosition);
             showOrderPriceBackground = d.showOrderPriceBackground;
             orderPriceSize           = safeEnum(PriceSize.class,     d.orderPriceSize,     orderPriceSize);
             if (d.orderPriceColor != 0) orderPriceColor = d.orderPriceColor;
             orderPriceBold           = d.orderPriceBold;
-            // Order Display
             showDelivered           = d.showDelivered;
             deliveredPosition       = safeEnum(TimerPosition.class, d.deliveredPosition, deliveredPosition);
             showDeliveredBackground = d.showDeliveredBackground;
@@ -128,7 +124,6 @@ public class DrillConfig {
     }
 
     private static class ConfigData {
-        // Timer Display
         boolean enabled            = DrillConfig.enabled;
         boolean showTimer          = DrillConfig.showTimer;
         boolean showBackground     = DrillConfig.showBackground;
@@ -144,21 +139,18 @@ public class DrillConfig {
         boolean dayBold            = DrillConfig.dayBold;
         boolean hourBold           = DrillConfig.hourBold;
         boolean minuteBold         = DrillConfig.minuteBold;
-        // Auction Price
         boolean showPrice           = DrillConfig.showPrice;
         String  pricePosition       = DrillConfig.pricePosition.name();
         boolean showPriceBackground = DrillConfig.showPriceBackground;
         String  priceSize           = DrillConfig.priceSize.name();
         int     priceColor          = DrillConfig.priceColor;
         boolean priceBold           = DrillConfig.priceBold;
-        // Order Price
         boolean showOrderPrice           = DrillConfig.showOrderPrice;
         String  orderPricePosition       = DrillConfig.orderPricePosition.name();
         boolean showOrderPriceBackground = DrillConfig.showOrderPriceBackground;
         String  orderPriceSize           = DrillConfig.orderPriceSize.name();
         int     orderPriceColor          = DrillConfig.orderPriceColor;
         boolean orderPriceBold           = DrillConfig.orderPriceBold;
-        // Order Display
         boolean showDelivered           = DrillConfig.showDelivered;
         String  deliveredPosition       = DrillConfig.deliveredPosition.name();
         boolean showDeliveredBackground = DrillConfig.showDeliveredBackground;
@@ -171,145 +163,145 @@ public class DrillConfig {
 
     public static ConfigBuilder getConfigBuilder() {
         ConfigBuilder builder = ConfigBuilder.create()
-                .setTitle(Text.literal("Info in Slot"))
+                .setTitle(Component.literal("Info in Slot"))
                 .setSavingRunnable(DrillConfig::save);
 
         ConfigEntryBuilder eb = builder.entryBuilder();
 
         // ── Timer Display ─────────────────────────────────────────────────────
-        ConfigCategory timerCat = builder.getOrCreateCategory(Text.literal("Timer Display"));
+        ConfigCategory timerCat = builder.getOrCreateCategory(Component.literal("Timer Display"));
 
-        timerCat.addEntry(eb.startBooleanToggle(Text.literal("Enable Mod"), enabled)
+        timerCat.addEntry(eb.startBooleanToggle(Component.literal("Enable Mod"), enabled)
                 .setDefaultValue(true).setSaveConsumer(v -> enabled = v).build());
 
-        timerCat.addEntry(eb.startBooleanToggle(Text.literal("Show Timer"), showTimer)
+        timerCat.addEntry(eb.startBooleanToggle(Component.literal("Show Timer"), showTimer)
                 .setDefaultValue(true).setSaveConsumer(v -> showTimer = v).build());
 
-        timerCat.addEntry(eb.startBooleanToggle(Text.literal("Show Background"), showBackground)
+        timerCat.addEntry(eb.startBooleanToggle(Component.literal("Show Background"), showBackground)
                 .setDefaultValue(true).setSaveConsumer(v -> showBackground = v).build());
 
-        timerCat.addEntry(eb.startEnumSelector(Text.literal("Timer Size"), TimerSize.class, timerSize)
+        timerCat.addEntry(eb.startEnumSelector(Component.literal("Timer Size"), TimerSize.class, timerSize)
                 .setDefaultValue(TimerSize.MEDIUM)
                 .setEnumNameProvider(v -> switch ((TimerSize) v) {
-                    case SMALL  -> Text.literal("Small");
-                    case MEDIUM -> Text.literal("Medium");
-                    case LARGE  -> Text.literal("Large (Hours Only)");
+                    case SMALL  -> Component.literal("Small");
+                    case MEDIUM -> Component.literal("Medium");
+                    case LARGE  -> Component.literal("Large (Hours Only)");
                 })
                 .setSaveConsumer(v -> timerSize = v)
-                .setTooltip(Text.literal("Large is only available with Hours Only enabled"))
+                .setTooltip(Component.literal("Large is only available with Hours Only enabled"))
                 .build());
 
-        timerCat.addEntry(eb.startEnumSelector(Text.literal("Timer Position"), TimerPosition.class, timerPosition)
+        timerCat.addEntry(eb.startEnumSelector(Component.literal("Timer Position"), TimerPosition.class, timerPosition)
                 .setDefaultValue(TimerPosition.MIDDLE)
                 .setEnumNameProvider(v -> posLabel((TimerPosition) v))
                 .setSaveConsumer(v -> timerPosition = v).build());
 
-        timerCat.addEntry(eb.startBooleanToggle(Text.literal("Separate Slot Colors"), separateSlotColors)
+        timerCat.addEntry(eb.startBooleanToggle(Component.literal("Separate Slot Colors"), separateSlotColors)
                 .setDefaultValue(true).setSaveConsumer(v -> separateSlotColors = v).build());
 
-        timerCat.addEntry(eb.startBooleanToggle(Text.literal("Hours Only"), hoursOnly)
+        timerCat.addEntry(eb.startBooleanToggle(Component.literal("Hours Only"), hoursOnly)
                 .setDefaultValue(false)
                 .setSaveConsumer(v -> {
                     hoursOnly = v;
                     if (!v && timerSize == TimerSize.LARGE) timerSize = TimerSize.MEDIUM;
                 }).build());
 
-        timerCat.addEntry(new ColorSwatchEntry(Text.literal("2+ Day Color"), twoDayColor, 0xFF55FF,
+        timerCat.addEntry(new ColorSwatchEntry(Component.literal("2+ Day Color"), twoDayColor, 0xFF55FF,
                 twoDayBold, false, v -> twoDayColor = v, v -> twoDayBold = v));
-        timerCat.addEntry(new ColorSwatchEntry(Text.literal("Day Color"), dayColor, 0x55FFFF,
+        timerCat.addEntry(new ColorSwatchEntry(Component.literal("Day Color"), dayColor, 0x55FFFF,
                 dayBold, false, v -> dayColor = v, v -> dayBold = v));
-        timerCat.addEntry(new ColorSwatchEntry(Text.literal("Hour Color"), hourColor, 0xFFAA00,
+        timerCat.addEntry(new ColorSwatchEntry(Component.literal("Hour Color"), hourColor, 0xFFAA00,
                 hourBold, false, v -> hourColor = v, v -> hourBold = v));
-        timerCat.addEntry(new ColorSwatchEntry(Text.literal("Minute Color"), minuteColor, 0xFF5555,
+        timerCat.addEntry(new ColorSwatchEntry(Component.literal("Minute Color"), minuteColor, 0xFF5555,
                 minuteBold, false, v -> minuteColor = v, v -> minuteBold = v));
 
         // ── Auction Price ─────────────────────────────────────────────────────
-        ConfigCategory auctionCat = builder.getOrCreateCategory(Text.literal("Auction Price"));
+        ConfigCategory auctionCat = builder.getOrCreateCategory(Component.literal("Auction Price"));
 
-        auctionCat.addEntry(eb.startBooleanToggle(Text.literal("Show Auction Price"), showPrice)
+        auctionCat.addEntry(eb.startBooleanToggle(Component.literal("Show Auction Price"), showPrice)
                 .setDefaultValue(true)
-                .setTooltip(Text.literal("Price from /ah — shown as $1.27B in lime green"))
+                .setTooltip(Component.literal("Price from /ah — shown as $1.27B in lime green"))
                 .setSaveConsumer(v -> showPrice = v).build());
 
-        auctionCat.addEntry(eb.startEnumSelector(Text.literal("Position"), TimerPosition.class, pricePosition)
+        auctionCat.addEntry(eb.startEnumSelector(Component.literal("Position"), TimerPosition.class, pricePosition)
                 .setDefaultValue(TimerPosition.TOP)
                 .setEnumNameProvider(v -> posLabel((TimerPosition) v))
                 .setSaveConsumer(v -> pricePosition = v).build());
 
-        auctionCat.addEntry(eb.startBooleanToggle(Text.literal("Background"), showPriceBackground)
+        auctionCat.addEntry(eb.startBooleanToggle(Component.literal("Background"), showPriceBackground)
                 .setDefaultValue(true).setSaveConsumer(v -> showPriceBackground = v).build());
 
-        auctionCat.addEntry(eb.startEnumSelector(Text.literal("Size"), PriceSize.class, priceSize)
+        auctionCat.addEntry(eb.startEnumSelector(Component.literal("Size"), PriceSize.class, priceSize)
                 .setDefaultValue(PriceSize.MEDIUM)
                 .setEnumNameProvider(v -> sizeLabel((PriceSize) v))
                 .setSaveConsumer(v -> priceSize = v).build());
 
-        auctionCat.addEntry(new ColorSwatchEntry(Text.literal("Color"), priceColor, 0x55FF55,
+        auctionCat.addEntry(new ColorSwatchEntry(Component.literal("Color"), priceColor, 0x55FF55,
                 priceBold, false, v -> priceColor = v, v -> priceBold = v));
 
         // ── Order Price ───────────────────────────────────────────────────────
-        ConfigCategory orderPriceCat = builder.getOrCreateCategory(Text.literal("Order Price"));
+        ConfigCategory orderPriceCat = builder.getOrCreateCategory(Component.literal("Order Price"));
 
-        orderPriceCat.addEntry(eb.startBooleanToggle(Text.literal("Show Order Price"), showOrderPrice)
+        orderPriceCat.addEntry(eb.startBooleanToggle(Component.literal("Show Order Price"), showOrderPrice)
                 .setDefaultValue(true)
-                .setTooltip(Text.literal("Price from /order — shown as $ 130.1k (space stripped on display)"))
+                .setTooltip(Component.literal("Price from /order — shown as $ 130.1k (space stripped on display)"))
                 .setSaveConsumer(v -> showOrderPrice = v).build());
 
-        orderPriceCat.addEntry(eb.startEnumSelector(Text.literal("Position"), TimerPosition.class, orderPricePosition)
+        orderPriceCat.addEntry(eb.startEnumSelector(Component.literal("Position"), TimerPosition.class, orderPricePosition)
                 .setDefaultValue(TimerPosition.TOP)
                 .setEnumNameProvider(v -> posLabel((TimerPosition) v))
                 .setSaveConsumer(v -> orderPricePosition = v).build());
 
-        orderPriceCat.addEntry(eb.startBooleanToggle(Text.literal("Background"), showOrderPriceBackground)
+        orderPriceCat.addEntry(eb.startBooleanToggle(Component.literal("Background"), showOrderPriceBackground)
                 .setDefaultValue(true).setSaveConsumer(v -> showOrderPriceBackground = v).build());
 
-        orderPriceCat.addEntry(eb.startEnumSelector(Text.literal("Size"), PriceSize.class, orderPriceSize)
+        orderPriceCat.addEntry(eb.startEnumSelector(Component.literal("Size"), PriceSize.class, orderPriceSize)
                 .setDefaultValue(PriceSize.MEDIUM)
                 .setEnumNameProvider(v -> sizeLabel((PriceSize) v))
                 .setSaveConsumer(v -> orderPriceSize = v).build());
 
-        orderPriceCat.addEntry(new ColorSwatchEntry(Text.literal("Color"), orderPriceColor, 0x55FF55,
+        orderPriceCat.addEntry(new ColorSwatchEntry(Component.literal("Color"), orderPriceColor, 0x55FF55,
                 orderPriceBold, false, v -> orderPriceColor = v, v -> orderPriceBold = v));
 
         // ── Order Display (delivered) ─────────────────────────────────────────
-        ConfigCategory orderDisplayCat = builder.getOrCreateCategory(Text.literal("Order Display"));
+        ConfigCategory orderDisplayCat = builder.getOrCreateCategory(Component.literal("Order Display"));
 
-        orderDisplayCat.addEntry(eb.startBooleanToggle(Text.literal("Show Delivered"), showDelivered)
+        orderDisplayCat.addEntry(eb.startBooleanToggle(Component.literal("Show Delivered"), showDelivered)
                 .setDefaultValue(true)
-                .setTooltip(Text.literal("Remaining items to deliver, e.g. '800k' from '1.2M/2M Delivered'"))
+                .setTooltip(Component.literal("Remaining items to deliver, e.g. '800k' from '1.2M/2M Delivered'"))
                 .setSaveConsumer(v -> showDelivered = v).build());
 
-        orderDisplayCat.addEntry(eb.startEnumSelector(Text.literal("Position"), TimerPosition.class, deliveredPosition)
+        orderDisplayCat.addEntry(eb.startEnumSelector(Component.literal("Position"), TimerPosition.class, deliveredPosition)
                 .setDefaultValue(TimerPosition.BOTTOM)
                 .setEnumNameProvider(v -> posLabel((TimerPosition) v))
                 .setSaveConsumer(v -> deliveredPosition = v).build());
 
-        orderDisplayCat.addEntry(eb.startBooleanToggle(Text.literal("Background"), showDeliveredBackground)
+        orderDisplayCat.addEntry(eb.startBooleanToggle(Component.literal("Background"), showDeliveredBackground)
                 .setDefaultValue(true).setSaveConsumer(v -> showDeliveredBackground = v).build());
 
-        orderDisplayCat.addEntry(eb.startEnumSelector(Text.literal("Size"), PriceSize.class, deliveredSize)
+        orderDisplayCat.addEntry(eb.startEnumSelector(Component.literal("Size"), PriceSize.class, deliveredSize)
                 .setDefaultValue(PriceSize.MEDIUM)
                 .setEnumNameProvider(v -> sizeLabel((PriceSize) v))
                 .setSaveConsumer(v -> deliveredSize = v).build());
 
-        orderDisplayCat.addEntry(new ColorSwatchEntry(Text.literal("Color"), deliveredColor, 0xFFFFFF,
+        orderDisplayCat.addEntry(new ColorSwatchEntry(Component.literal("Color"), deliveredColor, 0xFFFFFF,
                 deliveredBold, false, v -> deliveredColor = v, v -> deliveredBold = v));
 
         return builder;
     }
 
-    private static Text posLabel(TimerPosition p) {
+    private static Component posLabel(TimerPosition p) {
         return switch (p) {
-            case TOP    -> Text.literal("Top");
-            case MIDDLE -> Text.literal("Middle");
-            case BOTTOM -> Text.literal("Bottom");
+            case TOP    -> Component.literal("Top");
+            case MIDDLE -> Component.literal("Middle");
+            case BOTTOM -> Component.literal("Bottom");
         };
     }
 
-    private static Text sizeLabel(PriceSize s) {
+    private static Component sizeLabel(PriceSize s) {
         return switch (s) {
-            case SMALL  -> Text.literal("Small");
-            case MEDIUM -> Text.literal("Medium");
+            case SMALL  -> Component.literal("Small");
+            case MEDIUM -> Component.literal("Medium");
         };
     }
 }
