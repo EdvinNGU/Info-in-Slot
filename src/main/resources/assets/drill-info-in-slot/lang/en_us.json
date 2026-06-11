@@ -2,5 +2,7 @@
   "key.category.infoinslot.keys": "Info in Slot",
   "key.infoinslot.toggle_mod": "Toggle Info in Slot",
   "key.infoinslot.toggle_hours_only": "Toggle Hours Only",
-  "key.infoinslot.cycle_size": "Cycle Timer Size"
+  "key.infoinslot.cycle_size": "Cycle Timer Size",
+  "key.infoinslot.toggle_all_backgrounds": "Toggle All Backgrounds",
+  "key.infoinslot.toggle_fraction_mode": "Toggle Fraction Mode"
 }
