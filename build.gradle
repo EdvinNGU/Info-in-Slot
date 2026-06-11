@@ -24,8 +24,12 @@ dependencies {
 	modImplementation "net.fabricmc:fabric-loader:${loader_version}"
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
 
-	modImplementation "com.terraformersmc:modmenu:17.0.0"
-	modApi "me.shedaniel.cloth:cloth-config-fabric:21.11.153"
+	modImplementation "com.terraformersmc:modmenu:16.0.1"
+	modApi "me.shedaniel.cloth:cloth-config-fabric:20.0.149"
+}
+
+remapJar {
+	archiveFileName = "${project.archives_base_name}-${project.mod_version}-${project.minecraft_version}.jar"
 }
 
 processResources {
