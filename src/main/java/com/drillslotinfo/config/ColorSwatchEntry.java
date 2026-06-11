@@ -38,6 +38,7 @@ public class ColorSwatchEntry extends AbstractConfigListEntry<Integer> {
     private final boolean defaultBold;  // factory default
     private final boolean initialBold;  // value when screen opened
     private final Consumer<Boolean> boldSave;
+    private final boolean showBold;
 
     // Cached render coords for hit-detection in mouseClicked.
     private int lastX, lastY, lastW, lastH;
@@ -48,12 +49,28 @@ public class ColorSwatchEntry extends AbstractConfigListEntry<Integer> {
         super(fieldName, false);
         this.value        = value;
         this.defaultValue = defaultValue;
-        this.initialValue = value;   // snapshot of the loaded value
+        this.initialValue = value;
         this.saveConsumer = saveConsumer;
         this.boldValue    = bold;
         this.defaultBold  = defaultBold;
-        this.initialBold  = bold;    // snapshot of the loaded bold state
+        this.initialBold  = bold;
         this.boldSave     = boldSave;
+        this.showBold     = true;
+    }
+
+    /** Color-only constructor — no bold button rendered or saved. */
+    public ColorSwatchEntry(Text fieldName, int value, int defaultValue,
+                            Consumer<Integer> saveConsumer) {
+        super(fieldName, false);
+        this.value        = value;
+        this.defaultValue = defaultValue;
+        this.initialValue = value;
+        this.saveConsumer = saveConsumer;
+        this.boldValue    = false;
+        this.defaultBold  = false;
+        this.initialBold  = false;
+        this.boldSave     = v -> {};
+        this.showBold     = false;
     }
 
     @Override public Integer getValue()                        { return value; }
@@ -99,17 +116,19 @@ public class ColorSwatchEntry extends AbstractConfigListEntry<Integer> {
         ctx.fill(previewX - 1, previewY - 1, previewX + 13, previewY + 13, 0xFFAAAAAA);
         ctx.fill(previewX, previewY, previewX + 12, previewY + 12, value | 0xFF000000);
 
-        // Bold toggle button: left of preview square
-        int boldBtnX = previewX - 4 - BOLD_BTN_W;
-        int boldBtnY = y + (entryHeight - BOLD_BTN_H) / 2;
-        ctx.fill(boldBtnX, boldBtnY, boldBtnX + BOLD_BTN_W, boldBtnY + BOLD_BTN_H,
-                 boldValue ? 0xFF686868 : 0xFF303030);
-        if (boldValue) {
-            ctx.drawTextWithShadow(mc.textRenderer,
-                    Text.literal("Bold").styled(s -> s.withBold(true)),
-                    boldBtnX + 3, boldBtnY + 1, 0xFFFFFFFF);
-        } else {
-            ctx.drawTextWithShadow(mc.textRenderer, "Bold", boldBtnX + 3, boldBtnY + 1, 0xFF777777);
+        // Bold toggle button: left of preview square (only when showBold)
+        if (showBold) {
+            int boldBtnX = previewX - 4 - BOLD_BTN_W;
+            int boldBtnY = y + (entryHeight - BOLD_BTN_H) / 2;
+            ctx.fill(boldBtnX, boldBtnY, boldBtnX + BOLD_BTN_W, boldBtnY + BOLD_BTN_H,
+                     boldValue ? 0xFF686868 : 0xFF303030);
+            if (boldValue) {
+                ctx.drawTextWithShadow(mc.textRenderer,
+                        Text.literal("Bold").styled(s -> s.withBold(true)),
+                        boldBtnX + 3, boldBtnY + 1, 0xFFFFFFFF);
+            } else {
+                ctx.drawTextWithShadow(mc.textRenderer, "Bold", boldBtnX + 3, boldBtnY + 1, 0xFF777777);
+            }
         }
     }
 
@@ -122,14 +141,16 @@ public class ColorSwatchEntry extends AbstractConfigListEntry<Integer> {
         int swatchAreaW = COLS * (SWATCH + GAP) - GAP;
         int swX0 = lastX + lastW - swatchAreaW;
 
-        // Bold button hit
-        int previewX = swX0 - 16;
-        int boldBtnX = previewX - 4 - BOLD_BTN_W;
-        int boldBtnY = lastY + (lastH - BOLD_BTN_H) / 2;
-        if (mx >= boldBtnX && mx < boldBtnX + BOLD_BTN_W &&
-            my >= boldBtnY && my < boldBtnY + BOLD_BTN_H) {
-            boldValue = !boldValue;
-            return true;
+        // Bold button hit (only when showBold)
+        if (showBold) {
+            int previewX = swX0 - 16;
+            int boldBtnX = previewX - 4 - BOLD_BTN_W;
+            int boldBtnY = lastY + (lastH - BOLD_BTN_H) / 2;
+            if (mx >= boldBtnX && mx < boldBtnX + BOLD_BTN_W &&
+                my >= boldBtnY && my < boldBtnY + BOLD_BTN_H) {
+                boldValue = !boldValue;
+                return true;
+            }
         }
 
         // Color swatch hit

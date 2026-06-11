@@ -3,11 +3,13 @@
   "id": "infoinslot",
   "version": "${version}",
   "name": "Info in Slot",
-  "description": "Displays Timer Auction/Order Price & Order Count for DonutSMP (Configurable)",
+  "description": "Displays tooltip stats inside item slots. Made for Economy servers like DonutSMP",
   "authors": ["EdvinNGU"],
   "contributors": ["Map in Slot Mod"],
   "contact": {
-    "homepage": "https://github.com/EdvinNGU/Info-in-Slot"
+    "homepage": "https://www.youtube.com/@EdvinNGU/live",
+    "sources": "https://github.com/EdvinNGU/Info-in-Slot",
+    "donate": "https://botrix.live/k/edvinngu/tip"
   },
   "license": "MIT",
   "icon": "assets/drill-info-in-slot/icon.png",

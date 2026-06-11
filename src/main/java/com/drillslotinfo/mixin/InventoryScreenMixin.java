@@ -7,31 +7,26 @@ import com.drillslotinfo.config.DrillConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import net.minecraft.screen.slot.Slot;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(HandledScreen.class)
-public abstract class HandledScreenMixin {
-
-    @Shadow protected int x;
-    @Shadow protected int y;
+@Mixin(InventoryScreen.class)
+public abstract class InventoryScreenMixin {
 
     @Inject(method = "render", at = @At("TAIL"))
     private void afterRender(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         if (!DrillConfig.enabled) return;
-
-        HandledScreen<?> self = (HandledScreen<?>) (Object) this;
-        boolean isInventory = self instanceof InventoryScreen;
-
-        if (isInventory ? !DrillConfig.showInInventory : !DrillConfig.showInContainer) return;
+        if (!DrillConfig.showInInventory) return;
 
         TextRenderer tr = MinecraftClient.getInstance().textRenderer;
+        InventoryScreen self = (InventoryScreen) (Object) this;
+        HandledScreenAccessor acc = (HandledScreenAccessor) self;
+        int sx = acc.getGuiLeft();
+        int sy = acc.getGuiTop();
 
         for (Slot slot : self.getScreenHandler().slots) {
             if (slot.getStack().isEmpty()) continue;
@@ -40,7 +35,7 @@ public abstract class HandledScreenMixin {
             if (data == null) continue;
 
             DrillSlotInfoClient.renderOverlay(context, tr, data,
-                    this.x + slot.x, this.y + slot.y);
+                    sx + slot.x, sy + slot.y);
         }
     }
 }
